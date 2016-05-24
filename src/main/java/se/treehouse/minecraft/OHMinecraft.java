@@ -4,12 +4,15 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.apache.log4j.BasicConfigurator;
 import org.bukkit.Bukkit;
+import org.bukkit.Server;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import se.treehouse.minecraft.data.PlayerData;
 import se.treehouse.minecraft.data.ServerData;
 import se.treehouse.minecraft.message.OHMessage;
 import spark.Spark;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -59,8 +62,15 @@ public class OHMinecraft extends JavaPlugin {
         Spark.stop();
     }
 
-    ServerListener playerListener = new ServerListener(players -> {
-        OHPlayerSocket.broadcastMessage(createServerMessage());
-        OHPlayerSocket.broadcastMessage(createPlayersMessage());
+    ServerListener playerListener = new ServerListener(new ServerListener.PlayerListener() {
+        @Override
+        public void onPlayersUpdate(Collection<? extends Player> players) {
+            OHPlayerSocket.broadcastMessage(createPlayersMessage());
+        }
+
+        @Override
+        public void onServerUpdate(Server server) {
+            OHPlayerSocket.broadcastMessage(createServerMessage());
+        }
     });
 }
