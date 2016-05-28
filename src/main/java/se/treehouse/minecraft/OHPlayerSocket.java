@@ -24,7 +24,7 @@ public class OHPlayerSocket {
     public void connected(Session session) {
         OHMinecraft.plugin.getLogger().info("Connected");
         sessions.add(session);
-        broadcastMessage(OHMinecraft.instance().createPlayersMessage());
+        broadcastMessage(OHMinecraft.instance().createServerMessage());
     }
 
     @OnWebSocketClose

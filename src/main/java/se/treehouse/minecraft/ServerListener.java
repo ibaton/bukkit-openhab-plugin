@@ -6,37 +6,38 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerEvent;
-import org.bukkit.event.player.PlayerLoginEvent;
-import org.bukkit.event.player.PlayerMoveEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.*;
 
 import java.util.Collection;
+import java.util.concurrent.*;
 
 public final class ServerListener implements Listener {
 
     private PlayerListener playerListener = null;
+    private ScheduledThreadPoolExecutor excecutor = new ScheduledThreadPoolExecutor(1);
 
     public ServerListener(PlayerListener playerListener) {
         this.playerListener = playerListener;
     }
 
-    @EventHandler(priority = EventPriority.MONITOR)
+    /*@EventHandler(priority = EventPriority.MONITOR)
     public void onLogin(PlayerLoginEvent event) {
         updatePlayers();
-        updateServer();
-    }
+        Server server = Bukkit.getServer();
+        updateServer(server);
+    }*/
 
     @EventHandler(priority = EventPriority.MONITOR)
-    public void onPlayerEvent(PlayerEvent event) {
+    public void onJoin(PlayerJoinEvent event) {
+        Server server = Bukkit.getServer();
         updatePlayers();
-        updateServer();
+        updateServer(server);
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onLogout(PlayerQuitEvent event) {
         updatePlayers();
-        updateServer();
+        excecutor.schedule((Runnable) () -> updateServer(Bukkit.getServer()), 200, TimeUnit.MILLISECONDS);
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -45,11 +46,12 @@ public final class ServerListener implements Listener {
     }
 
     private void updatePlayers(){
-        playerListener.onPlayersUpdate(Bukkit.getOnlinePlayers());
+        // TODO Disabled until filter is implemented.
+        /*playerListener.onPlayersUpdate(Bukkit.getOnlinePlayers());*/
     }
 
-    private void updateServer(){
-        playerListener.onServerUpdate(Bukkit.getServer());
+    private void updateServer(Server server){
+        playerListener.onServerUpdate(server);
     }
 
     public interface PlayerListener {
