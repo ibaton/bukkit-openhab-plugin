@@ -2,7 +2,7 @@ package se.treehouse.minecraft.message;
 
 import com.google.gson.JsonElement;
 
-public class OHMessage {
+public class WSMessage {
 
     public static final int MESSAGE_TYPE_PLAYERS = 1;
     public static final int MESSAGE_TYPE_SERVERS = 2;
@@ -11,7 +11,7 @@ public class OHMessage {
     int messageType;
     JsonElement message;
 
-    public OHMessage(int messageType, JsonElement message) {
+    public WSMessage(int messageType, JsonElement message) {
         this.messageType = messageType;
         this.message = message;
     }
