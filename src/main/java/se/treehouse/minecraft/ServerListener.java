@@ -20,13 +20,6 @@ public final class ServerListener implements Listener {
         this.playerListener = playerListener;
     }
 
-    /*@EventHandler(priority = EventPriority.MONITOR)
-    public void onLogin(PlayerLoginEvent event) {
-        updatePlayers();
-        Server server = Bukkit.getServer();
-        updateServer(server);
-    }*/
-
     @EventHandler(priority = EventPriority.MONITOR)
     public void onJoin(PlayerJoinEvent event) {
         Server server = Bukkit.getServer();
@@ -40,14 +33,8 @@ public final class ServerListener implements Listener {
         excecutor.schedule((Runnable) () -> updateServer(Bukkit.getServer()), 200, TimeUnit.MILLISECONDS);
     }
 
-    @EventHandler(priority = EventPriority.MONITOR)
-    public void onPlayerMoveEvent(PlayerMoveEvent event) {
-        updatePlayers();
-    }
-
     private void updatePlayers(){
-        // TODO Disabled until filter is implemented.
-        /*playerListener.onPlayersUpdate(Bukkit.getOnlinePlayers());*/
+        playerListener.onPlayersUpdate(Bukkit.getOnlinePlayers());
     }
 
     private void updateServer(Server server){

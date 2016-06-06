@@ -12,6 +12,8 @@ import se.treehouse.minecraft.message.WSMessage;
 import java.io.IOException;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 @WebSocket
 public class WSPlayerSocket {
@@ -19,6 +21,11 @@ public class WSPlayerSocket {
     // Store sessions if you want to, for example, broadcast a message to all users
     private static final Queue<Session> sessions = new ConcurrentLinkedQueue<>();
     private static Gson gson = new GsonBuilder().create();
+    private ScheduledThreadPoolExecutor excecutor = new ScheduledThreadPoolExecutor(1);
+
+    public WSPlayerSocket() {
+        schedulePlayerUpdates();
+    }
 
     @OnWebSocketConnect
     public void connected(Session session) {
@@ -43,6 +50,10 @@ public class WSPlayerSocket {
         if(WSMessage.MESSAGE_TYPE_PLAYERS == ohMessage.getMessageType()){
             broadcastMessage(WSMinecraft.instance().createPlayersMessage());
         }
+    }
+
+    public void schedulePlayerUpdates(){
+        excecutor.scheduleAtFixedRate((Runnable) () -> broadcastMessage(WSMinecraft.instance().createPlayersMessage()), 0, 5, TimeUnit.SECONDS);
     }
 
     public static void broadcastMessage(WSMessage message){
