@@ -85,6 +85,10 @@ public class WSMinecraft extends JavaPlugin {
         return new WSMessage(WSMessage.MESSAGE_TYPE_SERVERS, gson.toJsonTree(serverData));
     }
 
+    public WSMessage createSignMessage(Collection<ServerListener.OHSign> signs){
+        return new WSMessage(WSMessage.MESSAGE_TYPE_SIGNS, gson.toJsonTree(signs));
+    }
+
     public List<PlayerData> getPlayers(){
         return Bukkit.getOnlinePlayers().stream().map(PlayerData::new).collect(Collectors.toList());
     }
@@ -100,6 +104,11 @@ public class WSMinecraft extends JavaPlugin {
         @Override
         public void onPlayersUpdate(Collection<? extends Player> players) {
             WSPlayerSocket.broadcastMessage(createPlayersMessage());
+        }
+
+        @Override
+        public void onSignsUpdate(Collection<ServerListener.OHSign> signs) {
+            WSPlayerSocket.broadcastMessage(createSignMessage(signs));
         }
 
         @Override
