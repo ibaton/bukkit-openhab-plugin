@@ -1,9 +1,7 @@
 package se.treehouse.minecraft;
 
-import com.avaje.ebeaninternal.server.lib.sql.Prefix;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.Server;
 import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
@@ -31,8 +29,6 @@ public final class ServerListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void blockDestroyEvent(BlockBreakEvent event) {
-
-        WSMinecraft.plugin.getLogger().info("Block Destroyed: " + new LocationData(event.getBlock().getLocation()));
 
         OHSign removedSign = ohSigns.remove(new LocationData(event.getBlock().getLocation()));
         if(removedSign != null){

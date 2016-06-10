@@ -42,8 +42,6 @@ public class WSPlayerSocket {
 
     @OnWebSocketMessage
     public void message(Session session, String message) throws IOException {
-        WSMinecraft.plugin.getLogger().info("Got: " + message);
-
         WSMessage ohMessage = gson.fromJson(message, WSMessage.class);
         ohMessage.getMessageType();
 
@@ -58,7 +56,6 @@ public class WSPlayerSocket {
 
     public static void broadcastMessage(WSMessage message){
         String jsonMessage = gson.toJson(message);
-        WSMinecraft.plugin.getLogger().info("broadcastMessage: " + jsonMessage);
         sessions.stream().filter(Session::isOpen).forEach(session -> {
             try {
                 session.getRemote().sendString(jsonMessage);
