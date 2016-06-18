@@ -2,14 +2,22 @@ package se.treehouse.minecraft.data;
 
 import org.bukkit.Server;
 
+/**
+ * Data representing a minecraft server.
+ * Can be sent in {@link se.treehouse.minecraft.message.WSMessage}
+ */
 public class ServerData {
 
-    String name;
-    String version;
-    String bukkitVersion;
-    int maxPlayers;
-    int players;
+    private String name;
+    private String version;
+    private String bukkitVersion;
+    private int maxPlayers;
+    private int players;
 
+    /**
+     * Creates a represtenetation of minecraft server.
+     * @param server
+     */
     public ServerData(Server server) {
         name = server.getName();
         bukkitVersion = server.getBukkitVersion();

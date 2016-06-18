@@ -2,6 +2,10 @@ package se.treehouse.minecraft.data;
 
 import org.bukkit.entity.Player;
 
+/**
+ * Data representing a player on Minecraft server.
+ * Can be sent in {@link se.treehouse.minecraft.message.WSMessage}
+ */
 public class PlayerData {
 
     protected String displayName;
@@ -14,6 +18,10 @@ public class PlayerData {
     protected float walkSpeed;
     protected LocationData location;
 
+    /**
+     * Creates a representation of player.
+     * @param player the data representing a player.
+     */
     public PlayerData(Player player) {
         name = player.getName();
         displayName = player.getDisplayName();

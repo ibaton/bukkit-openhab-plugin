@@ -36,12 +36,12 @@ public class WSMinecraft extends JavaPlugin {
         Spark.port(10692);
         BasicConfigurator.configure();
 
-        Spark.webSocket("/stream", WSPlayerSocket.class);
+        Spark.webSocket("/stream", WSClientSocket.class);
         Spark.init();
         discoveryService = new DiscoveryService();
         discoveryService.start();
 
-        getServer().getPluginManager().registerEvents(playerListener, this);
+        getServer().getPluginManager().registerEvents(serverListener, this);
     }
 
     public static class DiscoveryService{
@@ -85,7 +85,7 @@ public class WSMinecraft extends JavaPlugin {
         return new WSMessage(WSMessage.MESSAGE_TYPE_SERVERS, gson.toJsonTree(serverData));
     }
 
-    public WSMessage createSignMessage(Collection<ServerListener.OHSign> signs){
+    public WSMessage createSignMessage(Collection<BukkitServerListener.OHSign> signs){
         return new WSMessage(WSMessage.MESSAGE_TYPE_SIGNS, gson.toJsonTree(signs));
     }
 
@@ -100,20 +100,20 @@ public class WSMinecraft extends JavaPlugin {
         discoveryService.stop();
     }
 
-    ServerListener playerListener = new ServerListener(new ServerListener.PlayerListener() {
+    BukkitServerListener serverListener = new BukkitServerListener(new BukkitServerListener.ServerListener() {
         @Override
         public void onPlayersUpdate(Collection<? extends Player> players) {
-            WSPlayerSocket.broadcastMessage(createPlayersMessage());
+            WSClientSocket.broadcastMessage(createPlayersMessage());
         }
 
         @Override
-        public void onSignsUpdate(Collection<ServerListener.OHSign> signs) {
-            WSPlayerSocket.broadcastMessage(createSignMessage(signs));
+        public void onSignsUpdate(Collection<BukkitServerListener.OHSign> signs) {
+            WSClientSocket.broadcastMessage(createSignMessage(signs));
         }
 
         @Override
         public void onServerUpdate(Server server) {
-            WSPlayerSocket.broadcastMessage(createServerMessage());
+            WSClientSocket.broadcastMessage(createServerMessage());
         }
     });
 }

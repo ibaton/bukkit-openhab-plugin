@@ -21,14 +21,26 @@ public class WSMessage {
         return messageType;
     }
 
+    /**
+     * Set the type of message sent.
+     * @param messageType the type of message sent.
+     */
     public void setMessageType(int messageType) {
         this.messageType = messageType;
     }
 
+    /**
+     * Get the data attached to message
+     * @return the data sent in message.
+     */
     public JsonElement getMessage() {
         return message;
     }
 
+    /**
+     * The data to send to listening clients.
+     * @param message the message to send.
+     */
     public void setMessage(JsonElement message) {
         this.message = message;
     }

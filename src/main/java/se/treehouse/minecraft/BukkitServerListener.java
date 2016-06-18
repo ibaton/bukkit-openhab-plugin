@@ -16,17 +16,30 @@ import se.treehouse.minecraft.data.LocationData;
 import java.util.*;
 import java.util.concurrent.*;
 
-public final class ServerListener implements Listener {
+/**
+ * Listens for changes on minecraft server.
+ */
+public final class BukkitServerListener implements Listener {
 
-    private PlayerListener playerListener = null;
+    private ServerListener serverListener = null;
     private ScheduledThreadPoolExecutor excecutor = new ScheduledThreadPoolExecutor(1);
-
     private Map<LocationData, OHSign> ohSigns = new HashMap<>();
 
-    public ServerListener(PlayerListener playerListener) {
-        this.playerListener = playerListener;
+    /**
+     * Listens for changes of minecraft server.
+     *
+     * @param serverListener listens for minecraft servers.
+     */
+    public BukkitServerListener(ServerListener serverListener) {
+        this.serverListener = serverListener;
     }
 
+    /**
+     * Listen for block breaking.
+     * Updates clients if redsone or or signs break.
+     *
+     * @param event block destroy events
+     */
     @EventHandler(priority = EventPriority.MONITOR)
     public void blockDestroyEvent(BlockBreakEvent event) {
 
@@ -43,6 +56,12 @@ public final class ServerListener implements Listener {
         }
     }
 
+    /**
+     * Listen for redstone changes.
+     * Updates sign state to reflect changes.
+     *
+     * @param event the redstone event.
+     */
     @EventHandler(priority = EventPriority.MONITOR)
     public void blockRedstoneEvent(BlockRedstoneEvent event) {
         Location topPosition = event.getBlock().getLocation().add(0, 1, 0);
@@ -69,6 +88,12 @@ public final class ServerListener implements Listener {
         }
     }
 
+    /**
+     * Listen for changes in sign state.
+     * Notifies clients that a new sign is created.
+     *
+     * @param event
+     */
     @EventHandler(priority = EventPriority.MONITOR)
     public void onSignChange(SignChangeEvent event) {
         String[] lines = event.getLines();
@@ -77,16 +102,24 @@ public final class ServerListener implements Listener {
         OHSign ohSign = new OHSign(lines[0], false, location);
 
         WSMinecraft.plugin.getLogger().info("Added sign: " + ohSign);
-
         ohSigns.put(ohSign.getLocation(), ohSign);
 
         broadcastSigns();
     }
 
+    /**
+     * Sends out state of all signs to all listening clients.
+     */
     private void broadcastSigns(){
         updateSigns(ohSigns.values());
     }
 
+    /**
+     * Listen for login event for player.
+     * Notifies connected client that player is online.
+     *
+     * @param event
+     */
     @EventHandler(priority = EventPriority.MONITOR)
     public void onJoin(PlayerJoinEvent event) {
         Server server = Bukkit.getServer();
@@ -94,6 +127,12 @@ public final class ServerListener implements Listener {
         updateServer(server);
     }
 
+    /**
+     * Listen for logout event for player.
+     * Notifies connected client that player is offline.
+     *
+     * @param event logout event
+     */
     @EventHandler(priority = EventPriority.MONITOR)
     public void onLogout(PlayerQuitEvent event) {
         updatePlayers();
@@ -101,35 +140,65 @@ public final class ServerListener implements Listener {
     }
 
     private void updatePlayers(){
-        playerListener.onPlayersUpdate(Bukkit.getOnlinePlayers());
+        serverListener.onPlayersUpdate(Bukkit.getOnlinePlayers());
     }
 
+    /**
+     * Notify listener that sign configuration has been updated.
+     * @param signs the state of signs.
+     */
     private void updateSigns(Collection<OHSign> signs){
-        playerListener.onSignsUpdate(signs);
+        serverListener.onSignsUpdate(signs);
     }
 
+    /** {@inheritDoc} */
     private void updateServer(Server server){
-        playerListener.onServerUpdate(server);
+        serverListener.onServerUpdate(server);
     }
 
-    public interface PlayerListener {
+    public interface ServerListener {
         void onPlayersUpdate(Collection<? extends Player> players);
+
+        /**
+         * Notify listener that server configuration has been updated.
+         * @param server the state of server.
+         */
         void onServerUpdate(Server server);
+
+        /**
+         * Notify listener that sign configuration has been updated.
+         * @param signs the state of signs.
+         */
         void onSignsUpdate(Collection<OHSign> signs);
     }
 
+    /**
+     * A sign on minecraft server.
+     */
     public static class OHSign {
 
-        String name;
-        boolean state = false;
-        LocationData location;
+        private String name;
+        private boolean state = false;
+        private LocationData location;
 
+        /**
+         * Creates a sign holds information about its name (text printed on it)
+         * and if block under it is powered by Redstone.
+         *
+         * @param name the text on sign.
+         * @param state if block under it is powered by redstone.
+         * @param location location of sign.
+         */
         public OHSign(String name, boolean state, LocationData location) {
             this.name = name;
             this.state = state;
             this.location = location;
         }
 
+        /**
+         * The text on sign.
+         * @return the text on sign.
+         */
         public String getName() {
             return name;
         }
@@ -138,6 +207,10 @@ public final class ServerListener implements Listener {
             this.state = state;
         }
 
+        /**
+         * Get powered state of sign.
+         * @return true if sign is powered by redstone.
+         */
         public boolean getState(){
             return state;
         }
