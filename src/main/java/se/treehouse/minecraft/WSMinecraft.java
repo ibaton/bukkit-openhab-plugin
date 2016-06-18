@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import org.apache.log4j.BasicConfigurator;
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
+import org.bukkit.configuration.file.FileConfigurationOptions;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import se.treehouse.minecraft.data.PlayerData;
@@ -12,9 +13,6 @@ import se.treehouse.minecraft.data.ServerData;
 import se.treehouse.minecraft.message.WSMessage;
 import spark.Spark;
 
-import javax.jmdns.JmDNS;
-import javax.jmdns.ServiceInfo;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -23,52 +21,33 @@ public class WSMinecraft extends JavaPlugin {
 
     private Gson gson;
     public static WSMinecraft plugin;
+    public static final int DEFAULT_PORT = 10692;
     private DiscoveryService discoveryService;
 
     @Override
     public void onEnable() {
+        saveDefaultConfig();
+
         plugin = this;
 
         gson = new GsonBuilder().create();
 
         getLogger().info("Openhab plugin enabled");
 
-        Spark.port(10692);
+        FileConfigurationOptions fileConfigurationOptions = getConfig().options().copyDefaults(true);
+
+        int port = getConfig().getInt("port", DEFAULT_PORT);
+
+        Spark.port(port);
+        getLogger().info("Openhab plugin setting upp server att port " + port);
         BasicConfigurator.configure();
 
         Spark.webSocket("/stream", WSClientSocket.class);
         Spark.init();
         discoveryService = new DiscoveryService();
-        discoveryService.start();
+        discoveryService.start(port);
 
         getServer().getPluginManager().registerEvents(serverListener, this);
-    }
-
-    public static class DiscoveryService{
-
-        private JmDNS jmdns;
-
-        public void start() {
-            try {
-                jmdns = JmDNS.create();
-                jmdns.registerService(
-                        ServiceInfo.create("_http._tcp.local.", "wc-minecraft", 10692, "")
-                );
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        public void stop() {
-            if(jmdns != null) {
-                try {
-                    jmdns.unregisterAllServices();
-                    jmdns.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
     }
 
     public static WSMinecraft instance() {

@@ -10,6 +10,8 @@ https://www.youtube.com/watch?v=TdvkTorzkXU&feature=youtu.be
 - Download plugin from [here](https://github.com/ibaton/bukkit-openhab-plugin/releases/download/1.5/OHMinecraft.jar). 
 - Add jar to Server->plugins.
 
+Set listening port in Server->plugins->OHMinecraft->config.yml
+
 ## Things
 Server:
 - players : Number of connected players.
