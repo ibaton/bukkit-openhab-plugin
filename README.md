@@ -8,7 +8,7 @@ https://www.youtube.com/watch?v=TdvkTorzkXU&feature=youtu.be
 
 ## Setup
 - Download plugin from [here](https://github.com/ibaton/bukkit-openhab-plugin/releases/download/1.5/OHMinecraft.jar). 
-- Add jar to Server->plugins
+- Add jar to Server->plugins.
 
 ## Things
 Server:
