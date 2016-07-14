@@ -23,6 +23,9 @@ public class DiscoveryService {
         }
     }
 
+    /**
+     * Stop searching for swervices.
+     */
     public void stop() {
         if (jmdns != null) {
             try {
