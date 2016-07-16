@@ -12,7 +12,7 @@ public class DiscoveryService {
      * Creates a zero conf service that brodcasts to network.
      * @param port the port to broadcast.
      */
-    public void start(int port) {
+    public void registerService(int port) {
         try {
             jmdns = JmDNS.create();
             jmdns.registerService(
@@ -24,9 +24,9 @@ public class DiscoveryService {
     }
 
     /**
-     * Stop searching for swervices.
+     * Stop broadcasting service.
      */
-    public void stop() {
+    public void deregisterService() {
         if (jmdns != null) {
             try {
                 jmdns.unregisterAllServices();

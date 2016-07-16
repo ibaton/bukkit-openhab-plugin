@@ -18,7 +18,9 @@ import java.util.stream.Collectors;
 
 public class WSMinecraft extends JavaPlugin {
 
-    private Gson gson;
+    public static String PATH = "/stream";
+
+    private Gson gson = new GsonBuilder().create();
     public static WSMinecraft plugin;
     public static final int DEFAULT_PORT = 10692;
     private DiscoveryService discoveryService;
@@ -28,20 +30,20 @@ public class WSMinecraft extends JavaPlugin {
         saveDefaultConfig();
 
         plugin = this;
-
-        gson = new GsonBuilder().create();
-
         getLogger().info("Openhab plugin enabled");
+
         int port = getConfig().getInt("port", DEFAULT_PORT);
 
         Spark.port(port);
         getLogger().info("Openhab plugin setting upp server att port " + port);
         BasicConfigurator.configure();
 
-        Spark.webSocket("/stream", WSClientSocket.class);
+        Spark.webSocket(PATH, WSClientSocket.class);
         Spark.init();
+
+
         discoveryService = new DiscoveryService();
-        discoveryService.start(port);
+        discoveryService.registerService(port);
 
         getServer().getPluginManager().registerEvents(serverListener, this);
     }
@@ -81,7 +83,7 @@ public class WSMinecraft extends JavaPlugin {
     public void onDisable() {
         getLogger().info("Openhab plugin disabled");
         Spark.stop();
-        discoveryService.stop();
+        discoveryService.deregisterService();
     }
 
     BukkitServerListener serverListener = new BukkitServerListener(new BukkitServerListener.ServerListener() {
