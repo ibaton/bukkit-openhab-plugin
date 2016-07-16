@@ -7,9 +7,10 @@ import org.bukkit.Bukkit;
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
-import se.treehouse.minecraft.data.PlayerData;
-import se.treehouse.minecraft.data.ServerData;
+import se.treehouse.minecraft.message.data.PlayerData;
+import se.treehouse.minecraft.message.data.ServerData;
 import se.treehouse.minecraft.message.WSMessage;
+import se.treehouse.minecraft.items.OHSign;
 import spark.Spark;
 
 import java.util.Collection;
@@ -28,28 +29,50 @@ public class WSMinecraft extends JavaPlugin {
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        int port = getConfig().getInt("port", DEFAULT_PORT);
 
         plugin = this;
         getLogger().info("Openhab plugin enabled");
 
-        int port = getConfig().getInt("port", DEFAULT_PORT);
+        setupWebserver(port);
+        setupDiscoveryService(port);
 
+        getServer().getPluginManager().registerEvents(serverListener, this);
+    }
+
+    @Override
+    public void onDisable() {
+        getLogger().info("Openhab plugin disabled");
+        Spark.stop();
+        discoveryService.deregisterService();
+    }
+
+    public static WSMinecraft instance() {
+        return plugin;
+    }
+
+    /**
+     * Setup minecraft webserver.
+     *
+     * @param port the port to setup server on.
+     */
+    private void setupWebserver(int port){
         Spark.port(port);
         getLogger().info("Openhab plugin setting upp server att port " + port);
         BasicConfigurator.configure();
 
         Spark.webSocket(PATH, WSClientSocket.class);
         Spark.init();
-
-
-        discoveryService = new DiscoveryService();
-        discoveryService.registerService(port);
-
-        getServer().getPluginManager().registerEvents(serverListener, this);
     }
 
-    public static WSMinecraft instance() {
-        return plugin;
+    /**
+     * Setup discovery service for plugin.
+     *
+     * @param port the port to broadcast.
+     */
+    private void setupDiscoveryService(int port){
+        discoveryService = new DiscoveryService();
+        discoveryService.registerService(port);
     }
 
     /**
@@ -75,15 +98,8 @@ public class WSMinecraft extends JavaPlugin {
      * @param signs signs to send.
      * @return message containing sign data
      */
-    public WSMessage createSignMessage(Collection<BukkitServerListener.OHSign> signs){
+    public WSMessage createSignMessage(Collection<OHSign> signs){
         return new WSMessage(WSMessage.MESSAGE_TYPE_SIGNS, gson.toJsonTree(signs));
-    }
-
-    @Override
-    public void onDisable() {
-        getLogger().info("Openhab plugin disabled");
-        Spark.stop();
-        discoveryService.deregisterService();
     }
 
     BukkitServerListener serverListener = new BukkitServerListener(new BukkitServerListener.ServerListener() {
@@ -93,7 +109,7 @@ public class WSMinecraft extends JavaPlugin {
         }
 
         @Override
-        public void onSignsUpdate(Collection<BukkitServerListener.OHSign> signs) {
+        public void onSignsUpdate(Collection<OHSign> signs) {
             WSClientSocket.broadcastMessage(createSignMessage(signs));
         }
 

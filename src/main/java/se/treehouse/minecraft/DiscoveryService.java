@@ -13,11 +13,10 @@ public class DiscoveryService {
      * @param port the port to broadcast.
      */
     public void registerService(int port) {
+        ServiceInfo serviceInfo = ServiceInfo.create("_http._tcp.local.", "wc-minecraft", port, "");
         try {
             jmdns = JmDNS.create();
-            jmdns.registerService(
-                    ServiceInfo.create("_http._tcp.local.", "wc-minecraft", port, "")
-            );
+            jmdns.registerService(serviceInfo);
         } catch (IOException e) {
             e.printStackTrace();
         }

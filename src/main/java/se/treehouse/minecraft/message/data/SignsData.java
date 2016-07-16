@@ -1,4 +1,4 @@
-package se.treehouse.minecraft.data;
+package se.treehouse.minecraft.message.data;
 
 /**
  * Data representing a sign on minecraft server.

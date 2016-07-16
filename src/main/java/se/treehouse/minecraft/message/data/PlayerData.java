@@ -1,4 +1,4 @@
-package se.treehouse.minecraft.data;
+package se.treehouse.minecraft.message.data;
 
 import org.bukkit.entity.Player;
 
