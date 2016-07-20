@@ -3,7 +3,7 @@ package se.treehouse.minecraft;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Server;
-import org.bukkit.block.Block;
+import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -69,11 +69,12 @@ public final class BukkitServerListener implements Listener {
         LocationData topPositionData = new LocationData(topPosition);
         OHSign sign = ohSigns.get(topPositionData);
         if(sign == null){
-            Block topBlock = topPosition.getBlock();
+            BlockState topBlock = topPosition.getBlock().getState();
             if(topBlock instanceof Sign){
                 Sign signBlock = (Sign) topBlock;
                 sign = new OHSign(signBlock.getLines()[0], false, topPositionData);
                 ohSigns.put(topPositionData, sign);
+                WSMinecraft.plugin.getLogger().info("Found new sign " + sign.getName());
             }
         }
 

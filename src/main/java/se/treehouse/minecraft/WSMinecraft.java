@@ -28,10 +28,9 @@ public class WSMinecraft extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        plugin = this;
         saveDefaultConfig();
         int port = getConfig().getInt("port", DEFAULT_PORT);
-
-        plugin = this;
         getLogger().info("Openhab plugin enabled");
 
         setupWebserver(port);
