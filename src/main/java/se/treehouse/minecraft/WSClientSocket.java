@@ -38,7 +38,10 @@ public class WSClientSocket {
     public void connected(Session session) {
         WSMinecraft.plugin.getLogger().info("Connected");
         sessions.add(session);
+
         broadcastMessage(WSMinecraft.instance().createServerMessage());
+        broadcastMessage(WSMinecraft.instance().createPlayersMessage());
+        broadcastMessage(WSMinecraft.instance().createSignMessage(WSMinecraft.instance().signs));
     }
 
     /**

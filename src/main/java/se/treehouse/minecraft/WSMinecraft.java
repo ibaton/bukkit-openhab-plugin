@@ -13,6 +13,7 @@ import se.treehouse.minecraft.message.WSMessage;
 import se.treehouse.minecraft.items.OHSign;
 import spark.Spark;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -24,6 +25,7 @@ public class WSMinecraft extends JavaPlugin {
     private Gson gson = new GsonBuilder().create();
     public static WSMinecraft plugin;
     public static final int DEFAULT_PORT = 10692;
+    public Collection<OHSign> signs = new ArrayList<>();
     private DiscoveryService discoveryService;
 
     @Override
@@ -109,6 +111,7 @@ public class WSMinecraft extends JavaPlugin {
 
         @Override
         public void onSignsUpdate(Collection<OHSign> signs) {
+            WSMinecraft.this.signs = signs;
             WSClientSocket.broadcastMessage(createSignMessage(signs));
         }
 
