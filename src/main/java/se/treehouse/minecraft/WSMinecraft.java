@@ -3,17 +3,18 @@ package se.treehouse.minecraft;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.apache.log4j.BasicConfigurator;
-import org.bukkit.Bukkit;
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
-import se.treehouse.minecraft.message.data.PlayerData;
-import se.treehouse.minecraft.message.data.ServerData;
-import se.treehouse.minecraft.message.WSMessage;
+import rx.Observable;
+import se.treehouse.minecraft.communication.WSClientSocket;
+import se.treehouse.minecraft.communication.discovery.DiscoveryService;
+import se.treehouse.minecraft.communication.message.data.PlayerData;
+import se.treehouse.minecraft.communication.message.data.ServerData;
+import se.treehouse.minecraft.communication.message.WSMessage;
 import se.treehouse.minecraft.items.OHSign;
 import spark.Spark;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -25,8 +26,9 @@ public class WSMinecraft extends JavaPlugin {
     private Gson gson = new GsonBuilder().create();
     public static WSMinecraft plugin;
     public static final int DEFAULT_PORT = 10692;
-    public Collection<OHSign> signs = new ArrayList<>();
     private DiscoveryService discoveryService;
+
+    private Observable<WSMessage> messagesRx;
 
     @Override
     public void onEnable() {
@@ -35,15 +37,21 @@ public class WSMinecraft extends JavaPlugin {
         int port = getConfig().getInt("port", DEFAULT_PORT);
         getLogger().info("Openhab plugin enabled");
 
+        BukkitServerListener serverListener = new BukkitServerListener();
+        getServer().getPluginManager().registerEvents(serverListener, this);
+        messagesRx = Observable.merge(
+                serverListener.getServerRx().map(this::createServerMessage),
+                serverListener.getPlayersRx().map(this::createPlayersMessage),
+                serverListener.getSignsRx().map(this::createSignMessage));
+
         setupWebserver(port);
         setupDiscoveryService(port);
-
-        getServer().getPluginManager().registerEvents(serverListener, this);
     }
 
     @Override
     public void onDisable() {
         getLogger().info("Openhab plugin disabled");
+
         Spark.stop();
         discoveryService.deregisterService();
     }
@@ -77,11 +85,19 @@ public class WSMinecraft extends JavaPlugin {
     }
 
     /**
+     * Get observable emitting messages to send to clients.
+     * @return observable emitting messages;
+     */
+    public Observable<WSMessage> getMessagesRx(){
+        return messagesRx;
+    }
+
+    /**
      * Gather player data and package it in a a socket message.
      * @return message with player data
      */
-    public WSMessage createPlayersMessage(){
-        List<PlayerData> playerDatas = Bukkit.getOnlinePlayers().stream().map(PlayerData::new).collect(Collectors.toList());
+    public WSMessage createPlayersMessage(Collection<? extends Player> players){
+        List<PlayerData> playerDatas = players.stream().map(PlayerData::new).collect(Collectors.toList());
         return new WSMessage(WSMessage.MESSAGE_TYPE_PLAYERS, gson.toJsonTree(playerDatas));
     }
 
@@ -89,8 +105,8 @@ public class WSMinecraft extends JavaPlugin {
      * Gather server data and package it in a socket message
      * @return message with socket data
      */
-    public WSMessage createServerMessage(){
-        ServerData serverData = new ServerData(Bukkit.getServer());
+    public WSMessage createServerMessage(Server server){
+        ServerData serverData = new ServerData(server);
         return new WSMessage(WSMessage.MESSAGE_TYPE_SERVERS, gson.toJsonTree(serverData));
     }
 
@@ -102,22 +118,4 @@ public class WSMinecraft extends JavaPlugin {
     public WSMessage createSignMessage(Collection<OHSign> signs){
         return new WSMessage(WSMessage.MESSAGE_TYPE_SIGNS, gson.toJsonTree(signs));
     }
-
-    BukkitServerListener serverListener = new BukkitServerListener(new BukkitServerListener.ServerListener() {
-        @Override
-        public void onPlayersUpdate(Collection<? extends Player> players) {
-            WSClientSocket.broadcastMessage(createPlayersMessage());
-        }
-
-        @Override
-        public void onSignsUpdate(Collection<OHSign> signs) {
-            WSMinecraft.this.signs = signs;
-            WSClientSocket.broadcastMessage(createSignMessage(signs));
-        }
-
-        @Override
-        public void onServerUpdate(Server server) {
-            WSClientSocket.broadcastMessage(createServerMessage());
-        }
-    });
 }

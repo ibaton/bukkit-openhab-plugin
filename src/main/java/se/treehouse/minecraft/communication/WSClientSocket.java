@@ -1,4 +1,4 @@
-package se.treehouse.minecraft;
+package se.treehouse.minecraft.communication;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -7,13 +7,13 @@ import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketConnect;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
-import se.treehouse.minecraft.message.WSMessage;
+import rx.Subscription;
+import se.treehouse.minecraft.WSMinecraft;
+import se.treehouse.minecraft.communication.message.WSMessage;
 
 import java.io.IOException;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Handles communication with clients.
@@ -24,11 +24,9 @@ public class WSClientSocket {
     // Store sessions if you want to, for example, broadcast a message to all users
     private static final Queue<Session> sessions = new ConcurrentLinkedQueue<>();
     private static Gson gson = new GsonBuilder().create();
-    private ScheduledThreadPoolExecutor excecutor = new ScheduledThreadPoolExecutor(1);
+    private Subscription subscription;
 
-    public WSClientSocket() {
-        schedulePlayerUpdates();
-    }
+    public WSClientSocket() {}
 
     /**
      * Client connected to server.
@@ -39,9 +37,7 @@ public class WSClientSocket {
         WSMinecraft.plugin.getLogger().info("Connected");
         sessions.add(session);
 
-        broadcastMessage(WSMinecraft.instance().createServerMessage());
-        broadcastMessage(WSMinecraft.instance().createPlayersMessage());
-        broadcastMessage(WSMinecraft.instance().createSignMessage(WSMinecraft.instance().signs));
+        subscription = WSMinecraft.instance().getMessagesRx().subscribe(WSClientSocket::broadcastMessage);
     }
 
     /**
@@ -54,6 +50,11 @@ public class WSClientSocket {
     @OnWebSocketClose
     public void closed(Session session, int statusCode, String reason) {
         sessions.remove(session);
+
+        if(!subscription.isUnsubscribed()){
+            subscription.unsubscribe();
+        }
+
         WSMinecraft.plugin.getLogger().info("Closed");
     }
 
@@ -66,19 +67,6 @@ public class WSClientSocket {
      */
     @OnWebSocketMessage
     public void message(Session session, String message) throws IOException {
-        WSMessage ohMessage = gson.fromJson(message, WSMessage.class);
-        ohMessage.getMessageType();
-
-        if(WSMessage.MESSAGE_TYPE_PLAYERS == ohMessage.getMessageType()){
-            broadcastMessage(WSMinecraft.instance().createPlayersMessage());
-        }
-    }
-
-    /**
-     * Schedule player update with fixed interval.
-     */
-    public void schedulePlayerUpdates(){
-        excecutor.scheduleAtFixedRate((Runnable) () -> broadcastMessage(WSMinecraft.instance().createPlayersMessage()), 0, 5, TimeUnit.SECONDS);
     }
 
     /**

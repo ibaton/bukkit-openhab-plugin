@@ -1,4 +1,4 @@
-package se.treehouse.minecraft;
+package se.treehouse.minecraft.communication.discovery;
 
 import javax.jmdns.JmDNS;
 import javax.jmdns.ServiceInfo;

@@ -1,4 +1,4 @@
-package se.treehouse.minecraft.message;
+package se.treehouse.minecraft.communication.message;
 
 import com.google.gson.JsonElement;
 

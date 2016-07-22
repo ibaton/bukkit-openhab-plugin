@@ -1,10 +1,10 @@
-package se.treehouse.minecraft.message.data;
+package se.treehouse.minecraft.communication.message.data;
 
 import org.bukkit.Location;
 
 /**
  * Data representing a location in minecraft world.
- * Can be sent in {@link se.treehouse.minecraft.message.WSMessage}
+ * Can be sent in {@link se.treehouse.minecraft.communication.message.WSMessage}
  */
 public class LocationData {
     private double x;

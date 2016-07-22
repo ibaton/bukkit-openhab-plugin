@@ -1,6 +1,6 @@
 package se.treehouse.minecraft.items;
 
-import se.treehouse.minecraft.message.data.LocationData;
+import se.treehouse.minecraft.communication.message.data.LocationData;
 
 /**
  * A sign on minecraft server.

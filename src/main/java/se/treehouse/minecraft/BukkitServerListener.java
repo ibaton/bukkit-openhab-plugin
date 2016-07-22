@@ -11,10 +11,14 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
 import org.bukkit.event.player.*;
-import se.treehouse.minecraft.message.data.LocationData;
+import rx.Observable;
+import rx.subjects.BehaviorSubject;
+import se.treehouse.minecraft.communication.message.data.LocationData;
 import se.treehouse.minecraft.items.OHSign;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.*;
 
 /**
@@ -22,18 +26,12 @@ import java.util.concurrent.*;
  */
 public final class BukkitServerListener implements Listener {
 
-    private ServerListener serverListener = null;
-    private ScheduledThreadPoolExecutor excecutor = new ScheduledThreadPoolExecutor(1);
     private Map<LocationData, OHSign> ohSigns = new HashMap<>();
 
-    /**
-     * Listens for changes of minecraft server.
-     *
-     * @param serverListener listens for minecraft servers.
-     */
-    public BukkitServerListener(ServerListener serverListener) {
-        this.serverListener = serverListener;
-    }
+    private Observable<Server> serverRx = Observable.interval(0, 2000, TimeUnit.MILLISECONDS).<Server>map(tick -> Bukkit.getServer());
+    private BehaviorSubject<Collection<? extends Player>> playersRx = BehaviorSubject.create();
+    private BehaviorSubject<Collection<OHSign>> signsRx = BehaviorSubject.create();
+
 
     /**
      * Listen for block breaking.
@@ -43,16 +41,14 @@ public final class BukkitServerListener implements Listener {
      */
     @EventHandler(priority = EventPriority.MONITOR)
     public void blockDestroyEvent(BlockBreakEvent event) {
-
         OHSign removedSign = ohSigns.remove(new LocationData(event.getBlock().getLocation()));
         if(removedSign != null){
-            broadcastSigns();
+            updateSigns(ohSigns.values());
         }else {
             OHSign sign = ohSigns.get(new LocationData(event.getBlock().getLocation().add(0,1,0)));
             if(sign != null){
                 sign.setState(false);
                 updateSigns(ohSigns.values());
-                broadcastSigns();
             }
         }
     }
@@ -85,7 +81,7 @@ public final class BukkitServerListener implements Listener {
                 updateSigns(ohSigns.values());
                 WSMinecraft.plugin.getLogger().info("Added sign: " + sign);
 
-                broadcastSigns();
+                updateSigns(ohSigns.values());
             }
         }
     }
@@ -106,13 +102,6 @@ public final class BukkitServerListener implements Listener {
         WSMinecraft.plugin.getLogger().info("Added sign: " + ohSign);
         ohSigns.put(ohSign.getLocation(), ohSign);
 
-        broadcastSigns();
-    }
-
-    /**
-     * Sends out state of all signs to all listening clients.
-     */
-    private void broadcastSigns(){
         updateSigns(ohSigns.values());
     }
 
@@ -124,9 +113,7 @@ public final class BukkitServerListener implements Listener {
      */
     @EventHandler(priority = EventPriority.MONITOR)
     public void onJoin(PlayerJoinEvent event) {
-        Server server = Bukkit.getServer();
         updatePlayers();
-        updateServer(server);
     }
 
     /**
@@ -138,11 +125,10 @@ public final class BukkitServerListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onLogout(PlayerQuitEvent event) {
         updatePlayers();
-        excecutor.schedule((Runnable) () -> updateServer(Bukkit.getServer()), 200, TimeUnit.MILLISECONDS);
     }
 
     private void updatePlayers(){
-        serverListener.onPlayersUpdate(Bukkit.getOnlinePlayers());
+        playersRx.onNext(Bukkit.getOnlinePlayers());
     }
 
     /**
@@ -150,27 +136,30 @@ public final class BukkitServerListener implements Listener {
      * @param signs the state of signs.
      */
     private void updateSigns(Collection<OHSign> signs){
-        serverListener.onSignsUpdate(signs);
+        signsRx.onNext(signs);
     }
 
-    /** {@inheritDoc} */
-    private void updateServer(Server server){
-        serverListener.onServerUpdate(server);
+    /**
+     * Get observable emitting server objects.
+     * @return observable emitting server objects
+     */
+    public Observable<Server> getServerRx(){
+        return serverRx.asObservable().distinctUntilChanged();
     }
 
-    public interface ServerListener {
-        void onPlayersUpdate(Collection<? extends Player> players);
+    /**
+     * Get observable emitting player items when changed.
+     * @return observable emitting player items.
+     */
+    public Observable<Collection<? extends Player>> getPlayersRx(){
+        return playersRx.asObservable().distinctUntilChanged();
+    }
 
-        /**
-         * Notify listener that server configuration has been updated.
-         * @param server the state of server.
-         */
-        void onServerUpdate(Server server);
-
-        /**
-         * Notify listener that sign configuration has been updated.
-         * @param signs the state of signs.
-         */
-        void onSignsUpdate(Collection<OHSign> signs);
+    /**
+     * Get observable emitting sign items when changed.
+     * @return observable emitting sign items.
+     */
+    public Observable<Collection<OHSign>> getSignsRx(){
+        return signsRx.asObservable().distinctUntilChanged();
     }
 }

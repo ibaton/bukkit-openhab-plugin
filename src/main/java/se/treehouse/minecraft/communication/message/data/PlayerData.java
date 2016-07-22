@@ -1,10 +1,10 @@
-package se.treehouse.minecraft.message.data;
+package se.treehouse.minecraft.communication.message.data;
 
 import org.bukkit.entity.Player;
 
 /**
  * Data representing a player on Minecraft server.
- * Can be sent in {@link se.treehouse.minecraft.message.WSMessage}
+ * Can be sent in {@link se.treehouse.minecraft.communication.message.WSMessage}
  */
 public class PlayerData {
 
