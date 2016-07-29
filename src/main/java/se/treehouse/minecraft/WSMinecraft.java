@@ -67,7 +67,7 @@ public class WSMinecraft extends JavaPlugin {
      */
     private void setupWebserver(int port){
         Spark.port(port);
-        getLogger().info("Openhab plugin setting upp server att port " + port);
+        getLogger().info("Openhab plugin setting upp server at port " + port);
         BasicConfigurator.configure();
 
         Spark.webSocket(PATH, WSClientSocket.class);

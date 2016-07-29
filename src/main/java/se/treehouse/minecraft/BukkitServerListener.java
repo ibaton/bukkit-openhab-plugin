@@ -28,10 +28,14 @@ public final class BukkitServerListener implements Listener {
 
     private Map<LocationData, OHSign> ohSigns = new HashMap<>();
 
-    private Observable<Server> serverRx = Observable.interval(0, 2000, TimeUnit.MILLISECONDS).<Server>map(tick -> Bukkit.getServer());
-    private BehaviorSubject<Collection<? extends Player>> playersRx = BehaviorSubject.create();
-    private BehaviorSubject<Collection<OHSign>> signsRx = BehaviorSubject.create();
+    private Observable<Server> serverRx = Observable.interval(0, 15, TimeUnit.SECONDS).<Server>map(tick -> Bukkit.getServer());
 
+    private BehaviorSubject<Collection<? extends Player>> playersSubject = BehaviorSubject.create();
+    private Observable<Collection<? extends Player>> playersRx =
+            Observable.merge(playersSubject.asObservable(),
+                    Observable.interval(0, 5, TimeUnit.SECONDS).<Collection<? extends Player>>map(tick -> Bukkit.getOnlinePlayers()));
+
+    private BehaviorSubject<Collection<OHSign>> signsRx = BehaviorSubject.create();
 
     /**
      * Listen for block breaking.
@@ -79,9 +83,6 @@ public final class BukkitServerListener implements Listener {
             if(sign.getState() != newState) {
                 sign.setState(event.getNewCurrent() > 0);
                 updateSigns(ohSigns.values());
-                WSMinecraft.plugin.getLogger().info("Added sign: " + sign);
-
-                updateSigns(ohSigns.values());
             }
         }
     }
@@ -128,7 +129,7 @@ public final class BukkitServerListener implements Listener {
     }
 
     private void updatePlayers(){
-        playersRx.onNext(Bukkit.getOnlinePlayers());
+        playersSubject.onNext(Bukkit.getOnlinePlayers());
     }
 
     /**
@@ -144,7 +145,7 @@ public final class BukkitServerListener implements Listener {
      * @return observable emitting server objects
      */
     public Observable<Server> getServerRx(){
-        return serverRx.asObservable().distinctUntilChanged();
+        return serverRx.asObservable();
     }
 
     /**
@@ -152,7 +153,7 @@ public final class BukkitServerListener implements Listener {
      * @return observable emitting player items.
      */
     public Observable<Collection<? extends Player>> getPlayersRx(){
-        return playersRx.asObservable().distinctUntilChanged();
+        return playersRx.asObservable();
     }
 
     /**
@@ -160,6 +161,6 @@ public final class BukkitServerListener implements Listener {
      * @return observable emitting sign items.
      */
     public Observable<Collection<OHSign>> getSignsRx(){
-        return signsRx.asObservable().distinctUntilChanged();
+        return signsRx.asObservable();
     }
 }
