@@ -27,9 +27,7 @@ Player:
 - experience : Percentage of experience bar filled for next level.
 - health : The current health of player.
 - walk_speed : The current walk speed of player.
-- location x : The x location of player.
-- location y : The y location of player.
-- location z : The z location of player.
+- location : The location of player.
 
 Sign:
 - name : Text on sign (Used to identify sign).
