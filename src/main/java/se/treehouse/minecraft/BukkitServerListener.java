@@ -72,7 +72,9 @@ public final class BukkitServerListener implements Listener {
             BlockState topBlock = topPosition.getBlock().getState();
             if(topBlock instanceof Sign){
                 Sign signBlock = (Sign) topBlock;
-                sign = new OHSign(signBlock.getLines()[0], false, topPositionData);
+                String singText = signBlock.getLines()[0];
+
+                sign = new OHSign(singText, false, topPositionData);
                 ohSigns.put(topPositionData, sign);
                 WSMinecraft.plugin.getLogger().info("Found new sign " + sign.getName());
             }

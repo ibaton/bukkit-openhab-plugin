@@ -2,7 +2,7 @@ package se.treehouse.minecraft;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.*;
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -15,6 +15,7 @@ import se.treehouse.minecraft.communication.message.WSMessage;
 import se.treehouse.minecraft.items.OHSign;
 import spark.Spark;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -44,6 +45,7 @@ public class WSMinecraft extends JavaPlugin {
                 serverListener.getPlayersRx().map(this::createPlayersMessage),
                 serverListener.getSignsRx().map(this::createSignMessage));
 
+        setupLog();
         setupWebserver(port);
         setupDiscoveryService(port);
     }
@@ -68,10 +70,19 @@ public class WSMinecraft extends JavaPlugin {
     private void setupWebserver(int port){
         Spark.port(port);
         getLogger().info("Openhab plugin setting upp server at port " + port);
-        BasicConfigurator.configure();
 
         Spark.webSocket(PATH, WSClientSocket.class);
         Spark.init();
+    }
+
+    private void setupLog(){
+        Logger root = Logger.getRootLogger();
+        try {
+            DailyRollingFileAppender fa = new DailyRollingFileAppender(new PatternLayout("%d{yyyy-MM-dd HH:mm:ss.SSSS} %p %t %c \u2013 %m%n"), "./logs/ohminecraft.log", "'.'yyyy-MM-dd");
+            root.addAppender(fa);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
