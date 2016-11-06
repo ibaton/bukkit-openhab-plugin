@@ -38,6 +38,8 @@ public class WSMinecraft extends JavaPlugin {
         int port = getConfig().getInt("port", DEFAULT_PORT);
         getLogger().info("Openhab plugin enabled");
 
+        setupLog();
+
         BukkitServerListener serverListener = new BukkitServerListener();
         getServer().getPluginManager().registerEvents(serverListener, this);
         messagesRx = Observable.merge(
@@ -45,7 +47,6 @@ public class WSMinecraft extends JavaPlugin {
                 serverListener.getPlayersRx().map(this::createPlayersMessage),
                 serverListener.getSignsRx().map(this::createSignMessage));
 
-        setupLog();
         setupWebserver(port);
         setupDiscoveryService(port);
     }
@@ -77,6 +78,7 @@ public class WSMinecraft extends JavaPlugin {
 
     private void setupLog(){
         Logger root = Logger.getRootLogger();
+        root.setLevel(Level.INFO);
         try {
             DailyRollingFileAppender fa = new DailyRollingFileAppender(new PatternLayout("%d{yyyy-MM-dd HH:mm:ss.SSSS} %p %t %c \u2013 %m%n"), "./logs/ohminecraft.log", "'.'yyyy-MM-dd");
             root.addAppender(fa);
