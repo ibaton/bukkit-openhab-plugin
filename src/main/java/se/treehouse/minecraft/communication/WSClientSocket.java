@@ -2,18 +2,28 @@ package se.treehouse.minecraft.communication;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import org.bukkit.entity.Player;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketConnect;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 import rx.Subscription;
+import rx.functions.Action1;
 import se.treehouse.minecraft.WSMinecraft;
 import se.treehouse.minecraft.communication.message.WSMessage;
+import se.treehouse.minecraft.communication.message.data.commands.PlayerCommandData;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+
+import static se.treehouse.minecraft.communication.message.WSMessage.MESSAGE_TYPE_PLAYER_COMMANDS;
+import static se.treehouse.minecraft.communication.message.data.commands.PlayerCommandData.COMMAND_PLAYER_HEALTH;
+import static se.treehouse.minecraft.communication.message.data.commands.PlayerCommandData.COMMAND_PLAYER_LEVEL;
+import static se.treehouse.minecraft.communication.message.data.commands.PlayerCommandData.COMMAND_PLAYER_WALK_SPEED;
 
 /**
  * Handles communication with clients.
@@ -26,6 +36,13 @@ public class WSClientSocket {
     private static Gson gson = new GsonBuilder().create();
     private Subscription subscription;
 
+    Map<String, Action1<PlayerCommandData>> commandMap = new HashMap<>();
+    {
+        commandMap.put(COMMAND_PLAYER_HEALTH, this::handlePlayerHealthCommand);
+        commandMap.put(COMMAND_PLAYER_LEVEL, this::handlePlayerLevelCommand);
+        commandMap.put(COMMAND_PLAYER_WALK_SPEED, this::handlePlayerWalkSpeedCommand);
+    }
+
     public WSClientSocket() {}
 
     /**
@@ -37,7 +54,8 @@ public class WSClientSocket {
         WSMinecraft.plugin.getLogger().info("Connected");
         sessions.add(session);
 
-        subscription = WSMinecraft.instance().getMessagesRx().subscribe(WSClientSocket::broadcastMessage);
+        subscription = WSMinecraft.instance().getMessagesRx().subscribe(message -> SendMessage(session, message));
+        session.getRemote();
     }
 
     /**
@@ -67,20 +85,68 @@ public class WSClientSocket {
      */
     @OnWebSocketMessage
     public void message(Session session, String message) throws IOException {
+        try {
+            WSMessage wsMessage = gson.fromJson(message, WSMessage.class);
+            int messageType = wsMessage.getMessageType();
+
+            if(MESSAGE_TYPE_PLAYER_COMMANDS == messageType){
+                PlayerCommandData commandData = gson.fromJson(wsMessage.getMessage(), PlayerCommandData.class);
+
+                WSMinecraft.instance().getLogger().info(String.format("Player command: %s %s %s",
+                        commandData.getPlayerName(), commandData.getType() ,commandData.getCommand()));
+
+                if(commandMap.containsKey(commandData.getType())){
+                    commandMap.get(commandData.getType()).call(commandData);
+                }
+            }
+        } catch (Exception e){}
+    }
+
+    private void handlePlayerHealthCommand(PlayerCommandData commandData){
+        double playerHealth = Double.valueOf(commandData.getCommand());
+        String playerName = commandData.getPlayerName();
+
+        WSMinecraft.instance().getLogger().info(String.format("Setting %s health: %.1f", playerName , playerHealth));
+        getPlayer(playerName).setHealth(playerHealth);
+    }
+
+    private void handlePlayerLevelCommand(PlayerCommandData commandData){
+        int level = Integer.valueOf(commandData.getCommand());
+        String playerName = commandData.getPlayerName();
+
+        WSMinecraft.instance().getLogger().info(String.format("Setting %s level: %d", playerName, level));
+        getPlayer(playerName).setLevel(level);
+    }
+
+    private void handlePlayerWalkSpeedCommand(PlayerCommandData commandData){
+        float walkSpeed = Float.valueOf(commandData.getCommand());
+        String playerName = commandData.getPlayerName();
+
+        WSMinecraft.instance().getLogger().info(String.format("Setting %s walk speed: %d", playerName, walkSpeed));
+        getPlayer(playerName).setWalkSpeed(walkSpeed);
+    }
+
+    /**
+     * Get player from name-
+     * @param playerName the player to get
+     * @return player object for provided player name.
+     */
+    private Player getPlayer(String playerName){
+        return WSMinecraft.instance().getServer().getPlayer(playerName);
     }
 
     /**
      * Sends message to all connected clients.
      * @param message the message that was sent.
      */
-    public static void broadcastMessage(WSMessage message){
+    public static void SendMessage(Session session, WSMessage message){
         String jsonMessage = gson.toJson(message);
-        sessions.stream().filter(Session::isOpen).forEach(session -> {
+        if(session.isOpen()) {
             try {
                 session.getRemote().sendString(jsonMessage);
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        });
+        };
     }
 }
