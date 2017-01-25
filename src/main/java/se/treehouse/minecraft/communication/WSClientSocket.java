@@ -2,6 +2,7 @@ package se.treehouse.minecraft.communication;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
@@ -11,6 +12,7 @@ import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 import rx.Subscription;
 import rx.functions.Action1;
 import se.treehouse.minecraft.WSMinecraft;
+import se.treehouse.minecraft.communication.message.data.DataUtil;
 import se.treehouse.minecraft.communication.message.WSMessage;
 import se.treehouse.minecraft.communication.message.data.commands.PlayerCommandData;
 
@@ -21,9 +23,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static se.treehouse.minecraft.communication.message.WSMessage.MESSAGE_TYPE_PLAYER_COMMANDS;
-import static se.treehouse.minecraft.communication.message.data.commands.PlayerCommandData.COMMAND_PLAYER_HEALTH;
-import static se.treehouse.minecraft.communication.message.data.commands.PlayerCommandData.COMMAND_PLAYER_LEVEL;
-import static se.treehouse.minecraft.communication.message.data.commands.PlayerCommandData.COMMAND_PLAYER_WALK_SPEED;
+import static se.treehouse.minecraft.communication.message.data.commands.PlayerCommandData.*;
 
 /**
  * Handles communication with clients.
@@ -36,11 +36,12 @@ public class WSClientSocket {
     private static Gson gson = new GsonBuilder().create();
     private Subscription subscription;
 
-    Map<String, Action1<PlayerCommandData>> commandMap = new HashMap<>();
+    private Map<String, Action1<PlayerCommandData>> commandMap = new HashMap<>();
     {
         commandMap.put(COMMAND_PLAYER_HEALTH, this::handlePlayerHealthCommand);
         commandMap.put(COMMAND_PLAYER_LEVEL, this::handlePlayerLevelCommand);
         commandMap.put(COMMAND_PLAYER_WALK_SPEED, this::handlePlayerWalkSpeedCommand);
+        commandMap.put(COMMAND_PLAYER_GAME_MODE, this::handlePlayerGameModeCommand);
     }
 
     public WSClientSocket() {}
@@ -51,7 +52,7 @@ public class WSClientSocket {
      */
     @OnWebSocketConnect
     public void connected(Session session) {
-        WSMinecraft.plugin.getLogger().info("Connected");
+        WSMinecraft.plugin.getLogger().info("Connection from " + session.getRemoteAddress());
         sessions.add(session);
 
         subscription = WSMinecraft.instance().getMessagesRx().subscribe(message -> SendMessage(session, message));
@@ -73,7 +74,7 @@ public class WSClientSocket {
             subscription.unsubscribe();
         }
 
-        WSMinecraft.plugin.getLogger().info("Closed");
+        WSMinecraft.plugin.getLogger().info("Closed connection from " + session.getRemoteAddress());
     }
 
     /**
@@ -118,11 +119,26 @@ public class WSClientSocket {
         getPlayer(playerName).setLevel(level);
     }
 
-    private void handlePlayerWalkSpeedCommand(PlayerCommandData commandData){
-        float walkSpeed = Float.valueOf(commandData.getCommand());
+    private void handlePlayerGameModeCommand(PlayerCommandData commandData){
+        String gameModeName = commandData.getCommand();
         String playerName = commandData.getPlayerName();
 
-        WSMinecraft.instance().getLogger().info(String.format("Setting %s walk speed: %d", playerName, walkSpeed));
+        GameMode gameMode = DataUtil.stringToGameMode(gameModeName);
+        if(gameMode != null) {
+            WSMinecraft.instance().getLogger().info(String.format("Setting %s gamemode: %s", playerName, gameMode));
+            getPlayer(playerName).setGameMode(gameMode);
+        } else {
+            WSMinecraft.instance().getLogger().warning(String.format("Failed to get gamemode: %s", gameModeName));
+        }
+    }
+
+    private void handlePlayerWalkSpeedCommand(PlayerCommandData commandData){
+        float walkSpeed = Float.valueOf(commandData.getCommand());
+        walkSpeed = Math.max(0, walkSpeed);
+        walkSpeed = Math.min(1, walkSpeed);
+        String playerName = commandData.getPlayerName();
+
+        WSMinecraft.instance().getLogger().info(String.format("Setting %s walk speed: %f", playerName, walkSpeed));
         getPlayer(playerName).setWalkSpeed(walkSpeed);
     }
 
