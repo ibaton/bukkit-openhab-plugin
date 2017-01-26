@@ -3,6 +3,7 @@ package se.treehouse.minecraft.communication;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.bukkit.GameMode;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
@@ -42,6 +43,7 @@ public class WSClientSocket {
         commandMap.put(COMMAND_PLAYER_LEVEL, this::handlePlayerLevelCommand);
         commandMap.put(COMMAND_PLAYER_WALK_SPEED, this::handlePlayerWalkSpeedCommand);
         commandMap.put(COMMAND_PLAYER_GAME_MODE, this::handlePlayerGameModeCommand);
+        commandMap.put(COMMAND_PLAYER_LOCATION, this::handlePlayerLocationCommand);
     }
 
     public WSClientSocket() {}
@@ -141,6 +143,20 @@ public class WSClientSocket {
         WSMinecraft.instance().getLogger().info(String.format("Setting %s walk speed: %f", playerName, walkSpeed));
         getPlayer(playerName).setWalkSpeed(walkSpeed);
     }
+
+    private void handlePlayerLocationCommand(PlayerCommandData commandData){
+        String[] locationData = commandData.getCommand().split(",");
+        double locationX = Double.valueOf(locationData[0]);
+        double locationY = Double.valueOf(locationData[1]);
+        double locationZ = Double.valueOf(locationData[2]);
+        String playerName = commandData.getPlayerName();
+
+        WSMinecraft.instance().getLogger().info(String.format("Setting %s location: x:%.1f y:%.1f z:%.1f",
+                playerName, locationX, locationY, locationZ));
+        Player player = getPlayer(playerName);
+        player.teleport(new Location(player.getWorld(), locationX, locationY, locationZ));
+    }
+
 
     /**
      * Get player from name-

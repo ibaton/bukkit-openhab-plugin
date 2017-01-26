@@ -6,6 +6,7 @@ public class PlayerCommandData {
     public static String COMMAND_PLAYER_LEVEL = "PLAYER_LEVEL";
     public static String COMMAND_PLAYER_WALK_SPEED = "PLAYER_WALK_SPEED";
     public static String COMMAND_PLAYER_GAME_MODE = "PLAYER_GAME_MODE";
+    public static String COMMAND_PLAYER_LOCATION = "PLAYER_LOCATION";
 
     String type;
     String playerName;
