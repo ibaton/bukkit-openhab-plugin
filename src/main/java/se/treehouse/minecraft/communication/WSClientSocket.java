@@ -4,27 +4,36 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+import org.bukkit.material.Lever;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketConnect;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
+import rx.Observable;
 import rx.Subscription;
 import rx.functions.Action1;
 import se.treehouse.minecraft.WSMinecraft;
-import se.treehouse.minecraft.communication.message.data.DataUtil;
 import se.treehouse.minecraft.communication.message.WSMessage;
+import se.treehouse.minecraft.communication.message.data.DataUtil;
 import se.treehouse.minecraft.communication.message.data.commands.PlayerCommandData;
+import se.treehouse.minecraft.communication.message.data.commands.SignCommandData;
+import se.treehouse.minecraft.items.OHSign;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static se.treehouse.minecraft.communication.message.WSMessage.MESSAGE_TYPE_PLAYER_COMMANDS;
+import static se.treehouse.minecraft.communication.message.WSMessage.MESSAGE_TYPE_SIGN_COMMANDS;
 import static se.treehouse.minecraft.communication.message.data.commands.PlayerCommandData.*;
+import static se.treehouse.minecraft.communication.message.data.commands.SignCommandData.COMMAND_SIGN_ACTIVE;
 
 /**
  * Handles communication with clients.
@@ -37,13 +46,18 @@ public class WSClientSocket {
     private static Gson gson = new GsonBuilder().create();
     private Subscription subscription;
 
-    private Map<String, Action1<PlayerCommandData>> commandMap = new HashMap<>();
+    private Map<String, Action1<PlayerCommandData>> playerCommandMap = new HashMap<>();
     {
-        commandMap.put(COMMAND_PLAYER_HEALTH, this::handlePlayerHealthCommand);
-        commandMap.put(COMMAND_PLAYER_LEVEL, this::handlePlayerLevelCommand);
-        commandMap.put(COMMAND_PLAYER_WALK_SPEED, this::handlePlayerWalkSpeedCommand);
-        commandMap.put(COMMAND_PLAYER_GAME_MODE, this::handlePlayerGameModeCommand);
-        commandMap.put(COMMAND_PLAYER_LOCATION, this::handlePlayerLocationCommand);
+        playerCommandMap.put(COMMAND_PLAYER_HEALTH, this::handlePlayerHealthCommand);
+        playerCommandMap.put(COMMAND_PLAYER_LEVEL, this::handlePlayerLevelCommand);
+        playerCommandMap.put(COMMAND_PLAYER_WALK_SPEED, this::handlePlayerWalkSpeedCommand);
+        playerCommandMap.put(COMMAND_PLAYER_GAME_MODE, this::handlePlayerGameModeCommand);
+        playerCommandMap.put(COMMAND_PLAYER_LOCATION, this::handlePlayerLocationCommand);
+    }
+
+    private Map<String, Action1<SignCommandData>> signCommandMap = new HashMap<>();
+    {
+        signCommandMap.put(COMMAND_SIGN_ACTIVE, this::handleSignActivateCommand);
     }
 
     public WSClientSocket() {}
@@ -98,11 +112,22 @@ public class WSClientSocket {
                 WSMinecraft.instance().getLogger().info(String.format("Player command: %s %s %s",
                         commandData.getPlayerName(), commandData.getType() ,commandData.getCommand()));
 
-                if(commandMap.containsKey(commandData.getType())){
-                    commandMap.get(commandData.getType()).call(commandData);
+                if(playerCommandMap.containsKey(commandData.getType())){
+                    playerCommandMap.get(commandData.getType()).call(commandData);
+                }
+            } else if(MESSAGE_TYPE_SIGN_COMMANDS == messageType){
+                SignCommandData commandData = gson.fromJson(wsMessage.getMessage(), SignCommandData.class);
+
+                WSMinecraft.instance().getLogger().info(String.format("Sign command: %s %s %s",
+                        commandData.getSignName(), commandData.getType() ,commandData.getCommand()));
+
+                if(signCommandMap.containsKey(commandData.getType())){
+                    signCommandMap.get(commandData.getType()).call(commandData);
                 }
             }
-        } catch (Exception e){}
+        } catch (Exception e){
+            e.printStackTrace();
+        }
     }
 
     private void handlePlayerHealthCommand(PlayerCommandData commandData){
@@ -127,10 +152,10 @@ public class WSClientSocket {
 
         GameMode gameMode = DataUtil.stringToGameMode(gameModeName);
         if(gameMode != null) {
-            WSMinecraft.instance().getLogger().info(String.format("Setting %s gamemode: %s", playerName, gameMode));
+            WSMinecraft.instance().getLogger().info(String.format("Setting %s game mode: %s", playerName, gameMode));
             getPlayer(playerName).setGameMode(gameMode);
         } else {
-            WSMinecraft.instance().getLogger().warning(String.format("Failed to get gamemode: %s", gameModeName));
+            WSMinecraft.instance().getLogger().warning(String.format("Failed to get game mode: %s", gameModeName));
         }
     }
 
@@ -157,6 +182,25 @@ public class WSClientSocket {
         player.teleport(new Location(player.getWorld(), locationX, locationY, locationZ));
     }
 
+    private void handleSignActivateCommand(SignCommandData commandData){
+        WSMinecraft.instance().getLogger().info("Handle sign");
+        boolean active = Boolean.parseBoolean(commandData.getCommand());
+        String signName = commandData.getSignName();
+        WSMinecraft.instance().getLogger().info(String.format("Setting %s sign state: %s", signName, active));
+
+        OHSign sign = WSMinecraft.instance().getSign(signName);
+        if(sign != null) {
+            WSMinecraft.instance().getLogger().info(String.format("Setting %s sign state: %s", signName, active));
+
+            Block block = sign.getBlock();
+
+            if (block.getType() == Material.LEVER) {
+                Lever lever = (Lever) block.getState().getData();
+                lever.setPowered(active);
+                block.setData(lever.getData(), true);
+            }
+        }
+    }
 
     /**
      * Get player from name-
@@ -165,6 +209,11 @@ public class WSClientSocket {
      */
     private Player getPlayer(String playerName){
         return WSMinecraft.instance().getServer().getPlayer(playerName);
+    }
+
+    private Observable<Collection<OHSign>> getSign(String sign){
+        WSMinecraft.instance().getSignsRx().first();
+        return null;
     }
 
     /**

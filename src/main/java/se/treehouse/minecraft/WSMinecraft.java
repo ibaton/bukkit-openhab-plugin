@@ -10,9 +10,11 @@ import se.treehouse.minecraft.communication.WSClientSocket;
 import se.treehouse.minecraft.communication.discovery.DiscoveryService;
 import se.treehouse.minecraft.communication.message.MessageUtil;
 import se.treehouse.minecraft.communication.message.WSMessage;
+import se.treehouse.minecraft.items.OHSign;
 import spark.Spark;
 
 import java.io.IOException;
+import java.util.Collection;
 
 public class WSMinecraft extends JavaPlugin {
 
@@ -21,6 +23,8 @@ public class WSMinecraft extends JavaPlugin {
     public static WSMinecraft plugin;
     private static final int DEFAULT_PORT = 10692;
     private DiscoveryService discoveryService;
+
+    private BukkitServerListener serverListener;
 
     private Observable<WSMessage> messagesRx;
 
@@ -36,7 +40,7 @@ public class WSMinecraft extends JavaPlugin {
 
         setupLog();
 
-        BukkitServerListener serverListener = new BukkitServerListener();
+        serverListener = new BukkitServerListener();
         getServer().getPluginManager().registerEvents(serverListener, this);
         messagesRx = Observable.merge(
                 serverListener.getServerRx().map(messageUtil::createServerMessage),
@@ -70,6 +74,25 @@ public class WSMinecraft extends JavaPlugin {
 
         Spark.webSocket(PATH, WSClientSocket.class);
         Spark.init();
+    }
+
+    public Observable<Collection<OHSign>> getSignsRx(){
+        return serverListener.getSignsRx();
+    }
+
+    public Collection<OHSign> getSigns(){
+        return serverListener.getSigns();
+    }
+
+    public OHSign getSign(String signName){
+        Collection<OHSign> signs = serverListener.getSigns();
+        for(OHSign sign : signs){
+            if(sign.getName().equalsIgnoreCase(signName)){
+                return sign;
+            }
+        }
+
+        return null;
     }
 
     private void setupLog(){
