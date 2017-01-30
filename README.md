@@ -9,7 +9,7 @@ https://github.com/ibaton/Openhab-Minecraft-Binding
 [![Minecraft Binding 2](http://img.youtube.com/vi/zAyNWmr7byE/0.jpg)](https://youtu.be/zAyNWmr7byE)
 
 ## Setup
-- Download plugin from [here](https://github.com/ibaton/bukkit-openhab-plugin/releases/download/1.5/OHMinecraft.jar). 
+- Download plugin from [here](https://github.com/ibaton/bukkit-openhab-plugin/releases/download/1.9/OHMinecraft.jar). 
 - Add jar to Server->plugins.
 
 Set listening port in Server->plugins->OHMinecraft->config.yml
