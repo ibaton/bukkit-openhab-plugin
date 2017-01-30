@@ -11,7 +11,7 @@ public class OHSign {
     private String name;
     private boolean state = false;
     private LocationData location;
-    private Block block;
+    private transient Block block;
 
     /**
      * Creates a sign holds information about its name (text printed on it)

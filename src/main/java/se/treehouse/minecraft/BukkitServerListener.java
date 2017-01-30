@@ -84,6 +84,7 @@ public final class BukkitServerListener implements Listener {
         if(sign != null){
             boolean newState = event.getNewCurrent() > 0;
             if(sign.getState() != newState) {
+                WSMinecraft.plugin.getLogger().info("Updating " + sign.getName() + " state " + newState);
                 sign.setState(event.getNewCurrent() > 0);
                 updateSigns(ohSigns.values());
             }
