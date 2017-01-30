@@ -110,7 +110,7 @@ public class WSClientSocket {
                 PlayerCommandData commandData = gson.fromJson(wsMessage.getMessage(), PlayerCommandData.class);
 
                 WSMinecraft.instance().getLogger().info(String.format("Player command: %s %s %s",
-                        commandData.getPlayerName(), commandData.getType() ,commandData.getCommand()));
+                        commandData.getPlayerName(), commandData.getType() ,commandData.getValue()));
 
                 if(playerCommandMap.containsKey(commandData.getType())){
                     playerCommandMap.get(commandData.getType()).call(commandData);
@@ -119,19 +119,17 @@ public class WSClientSocket {
                 SignCommandData commandData = gson.fromJson(wsMessage.getMessage(), SignCommandData.class);
 
                 WSMinecraft.instance().getLogger().info(String.format("Sign command: %s %s %s",
-                        commandData.getSignName(), commandData.getType() ,commandData.getCommand()));
+                        commandData.getSignName(), commandData.getType() ,commandData.getValue()));
 
                 if(signCommandMap.containsKey(commandData.getType())){
                     signCommandMap.get(commandData.getType()).call(commandData);
                 }
             }
-        } catch (Exception e){
-            e.printStackTrace();
-        }
+        } catch (Exception e){}
     }
 
     private void handlePlayerHealthCommand(PlayerCommandData commandData){
-        double playerHealth = Double.valueOf(commandData.getCommand());
+        double playerHealth = Double.valueOf(commandData.getValue());
         String playerName = commandData.getPlayerName();
 
         WSMinecraft.instance().getLogger().info(String.format("Setting %s health: %.1f", playerName , playerHealth));
@@ -139,7 +137,7 @@ public class WSClientSocket {
     }
 
     private void handlePlayerLevelCommand(PlayerCommandData commandData){
-        int level = Integer.valueOf(commandData.getCommand());
+        int level = Integer.valueOf(commandData.getValue());
         String playerName = commandData.getPlayerName();
 
         WSMinecraft.instance().getLogger().info(String.format("Setting %s level: %d", playerName, level));
@@ -147,7 +145,7 @@ public class WSClientSocket {
     }
 
     private void handlePlayerGameModeCommand(PlayerCommandData commandData){
-        String gameModeName = commandData.getCommand();
+        String gameModeName = commandData.getValue();
         String playerName = commandData.getPlayerName();
 
         GameMode gameMode = DataUtil.stringToGameMode(gameModeName);
@@ -160,7 +158,7 @@ public class WSClientSocket {
     }
 
     private void handlePlayerWalkSpeedCommand(PlayerCommandData commandData){
-        float walkSpeed = Float.valueOf(commandData.getCommand());
+        float walkSpeed = Float.valueOf(commandData.getValue());
         walkSpeed = Math.max(0, walkSpeed);
         walkSpeed = Math.min(1, walkSpeed);
         String playerName = commandData.getPlayerName();
@@ -170,7 +168,7 @@ public class WSClientSocket {
     }
 
     private void handlePlayerLocationCommand(PlayerCommandData commandData){
-        String[] locationData = commandData.getCommand().split(",");
+        String[] locationData = commandData.getValue().split(",");
         double locationX = Double.valueOf(locationData[0]);
         double locationY = Double.valueOf(locationData[1]);
         double locationZ = Double.valueOf(locationData[2]);
@@ -184,7 +182,7 @@ public class WSClientSocket {
 
     private void handleSignActivateCommand(SignCommandData commandData){
         WSMinecraft.instance().getLogger().info("Handle sign");
-        boolean active = Boolean.parseBoolean(commandData.getCommand());
+        boolean active = Boolean.parseBoolean(commandData.getValue());
         String signName = commandData.getSignName();
         WSMinecraft.instance().getLogger().info(String.format("Setting %s sign state: %s", signName, active));
 

@@ -10,26 +10,41 @@ public class PlayerCommandData {
 
     String type;
     String playerName;
-    String command;
+    String value;
 
     public PlayerCommandData() {
     }
 
-    public PlayerCommandData(String type, String playerName, String command) {
+    public PlayerCommandData(String type, String playerName, String value) {
         this.type = type;
         this.playerName = playerName;
-        this.command = command;
+        this.value = value;
     }
 
+    /**
+     * Get the type of command.
+     *
+     * @return the type of command.
+     */
     public String getType() {
         return type;
     }
 
+    /**
+     * The name of the player that the command targets.
+     *
+     * @return name of player
+     */
     public String getPlayerName() {
         return playerName;
     }
 
-    public String getCommand() {
-        return command;
+    /**
+     * The command value sent.
+     *
+     * @return command value.
+     */
+    public String getValue() {
+        return value;
     }
 }
