@@ -6,7 +6,7 @@
 
     <groupId>se.treehou.minecraft</groupId>
     <artifactId>WSMinecraft</artifactId>
-    <version>1.1-SNAPSHOT</version>
+    <version>1.2-SNAPSHOT</version>
 
     <build>
         <defaultGoal>install</defaultGoal>
