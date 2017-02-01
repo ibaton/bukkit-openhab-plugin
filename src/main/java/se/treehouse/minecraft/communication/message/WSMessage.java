@@ -6,8 +6,9 @@ public class WSMessage {
 
     public static final int MESSAGE_TYPE_PLAYERS = 1;
     public static final int MESSAGE_TYPE_SERVERS = 2;
-    public static final int MESSAGE_TYPE_COMMANDS = 3;
     public static final int MESSAGE_TYPE_SIGNS = 4;
+    public static final int MESSAGE_TYPE_PLAYER_COMMANDS = 3;
+    public static final int MESSAGE_TYPE_SIGN_COMMANDS = 5;
 
     int messageType;
     JsonElement message;

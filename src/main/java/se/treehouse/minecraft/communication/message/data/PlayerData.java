@@ -17,6 +17,7 @@ public class PlayerData {
     protected double healthScale;
     protected float walkSpeed;
     protected LocationData location;
+    protected String gameMode;
 
     /**
      * Creates a representation of player.
@@ -32,5 +33,6 @@ public class PlayerData {
         level = player.getLevel();
         walkSpeed = player.getWalkSpeed();
         location = new LocationData(player.getLocation());
+        gameMode = DataUtil.gameModeToString(player.getGameMode());
     }
 }

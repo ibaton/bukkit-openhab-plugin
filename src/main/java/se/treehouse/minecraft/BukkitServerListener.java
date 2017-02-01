@@ -16,6 +16,7 @@ import rx.subjects.BehaviorSubject;
 import se.treehouse.minecraft.communication.message.data.LocationData;
 import se.treehouse.minecraft.items.OHSign;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -35,7 +36,7 @@ public final class BukkitServerListener implements Listener {
             Observable.merge(playersSubject.asObservable(),
                     Observable.interval(0, 5, TimeUnit.SECONDS).<Collection<? extends Player>>map(tick -> Bukkit.getOnlinePlayers()));
 
-    private BehaviorSubject<Collection<OHSign>> signsRx = BehaviorSubject.create();
+    private BehaviorSubject<Collection<OHSign>> signsRx = BehaviorSubject.create(new ArrayList<OHSign>());
 
     /**
      * Listen for block breaking.
@@ -74,7 +75,7 @@ public final class BukkitServerListener implements Listener {
                 Sign signBlock = (Sign) topBlock;
                 String singText = signBlock.getLines()[0];
 
-                sign = new OHSign(singText, false, topPositionData);
+                sign = new OHSign(singText, false, topPositionData, event.getBlock());
                 ohSigns.put(topPositionData, sign);
                 WSMinecraft.plugin.getLogger().info("Found new sign " + sign.getName());
             }
@@ -83,6 +84,7 @@ public final class BukkitServerListener implements Listener {
         if(sign != null){
             boolean newState = event.getNewCurrent() > 0;
             if(sign.getState() != newState) {
+                WSMinecraft.plugin.getLogger().info("Updating " + sign.getName() + " state " + newState);
                 sign.setState(event.getNewCurrent() > 0);
                 updateSigns(ohSigns.values());
             }
@@ -100,7 +102,7 @@ public final class BukkitServerListener implements Listener {
         String[] lines = event.getLines();
 
         LocationData location = new LocationData(event.getBlock().getLocation());
-        OHSign ohSign = new OHSign(lines[0], false, location);
+        OHSign ohSign = new OHSign(lines[0], false, location, event.getBlock().getRelative(0,-1,0));
 
         WSMinecraft.plugin.getLogger().info("Added sign: " + ohSign);
         ohSigns.put(ohSign.getLocation(), ohSign);
@@ -164,5 +166,13 @@ public final class BukkitServerListener implements Listener {
      */
     public Observable<Collection<OHSign>> getSignsRx(){
         return signsRx.asObservable();
+    }
+
+    /**
+     * Get signs added
+     * @return all added signs.
+     */
+    public Collection<OHSign> getSigns(){
+        return signsRx.getValue();
     }
 }

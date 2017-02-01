@@ -1,5 +1,6 @@
 package se.treehouse.minecraft.items;
 
+import org.bukkit.block.Block;
 import se.treehouse.minecraft.communication.message.data.LocationData;
 
 /**
@@ -10,6 +11,7 @@ public class OHSign {
     private String name;
     private boolean state = false;
     private LocationData location;
+    private transient Block block;
 
     /**
      * Creates a sign holds information about its name (text printed on it)
@@ -18,11 +20,13 @@ public class OHSign {
      * @param name the text on sign.
      * @param state if block under it is powered by redstone.
      * @param location location of sign.
+     * @param block under sign sign.
      */
-    public OHSign(String name, boolean state, LocationData location) {
+    public OHSign(String name, boolean state, LocationData location, Block block) {
         this.name = name;
         this.state = state;
         this.location = location;
+        this.block = block;
     }
 
     /**
@@ -56,6 +60,15 @@ public class OHSign {
      */
     public LocationData getLocation() {
         return location;
+    }
+
+    /**
+     * get block under sign
+     *
+     * @return block under sign
+     */
+    public Block getBlock() {
+        return block;
     }
 
     @Override

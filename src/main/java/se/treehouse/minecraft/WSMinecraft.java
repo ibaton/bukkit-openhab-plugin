@@ -1,38 +1,38 @@
 package se.treehouse.minecraft;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import org.apache.log4j.*;
-import org.bukkit.Server;
-import org.bukkit.entity.Player;
+import org.apache.log4j.DailyRollingFileAppender;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.apache.log4j.PatternLayout;
 import org.bukkit.plugin.java.JavaPlugin;
 import rx.Observable;
 import se.treehouse.minecraft.communication.WSClientSocket;
 import se.treehouse.minecraft.communication.discovery.DiscoveryService;
-import se.treehouse.minecraft.communication.message.data.PlayerData;
-import se.treehouse.minecraft.communication.message.data.ServerData;
+import se.treehouse.minecraft.communication.message.MessageUtil;
 import se.treehouse.minecraft.communication.message.WSMessage;
 import se.treehouse.minecraft.items.OHSign;
 import spark.Spark;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.List;
-import java.util.stream.Collectors;
 
 public class WSMinecraft extends JavaPlugin {
 
     public static String PATH = "/stream";
 
-    private Gson gson = new GsonBuilder().create();
     public static WSMinecraft plugin;
-    public static final int DEFAULT_PORT = 10692;
+    private static final int DEFAULT_PORT = 10692;
     private DiscoveryService discoveryService;
+
+    private BukkitServerListener serverListener;
 
     private Observable<WSMessage> messagesRx;
 
+    private MessageUtil messageUtil;
+
     @Override
     public void onEnable() {
+        messageUtil = new MessageUtil();
         plugin = this;
         saveDefaultConfig();
         int port = getConfig().getInt("port", DEFAULT_PORT);
@@ -40,12 +40,12 @@ public class WSMinecraft extends JavaPlugin {
 
         setupLog();
 
-        BukkitServerListener serverListener = new BukkitServerListener();
+        serverListener = new BukkitServerListener();
         getServer().getPluginManager().registerEvents(serverListener, this);
         messagesRx = Observable.merge(
-                serverListener.getServerRx().map(this::createServerMessage),
-                serverListener.getPlayersRx().map(this::createPlayersMessage),
-                serverListener.getSignsRx().map(this::createSignMessage));
+                serverListener.getServerRx().map(messageUtil::createServerMessage),
+                serverListener.getPlayersRx().map(messageUtil::createPlayersMessage),
+                serverListener.getSignsRx().map(messageUtil::createSignMessage));
 
         setupWebserver(port);
         setupDiscoveryService(port);
@@ -76,6 +76,25 @@ public class WSMinecraft extends JavaPlugin {
         Spark.init();
     }
 
+    public Observable<Collection<OHSign>> getSignsRx(){
+        return serverListener.getSignsRx();
+    }
+
+    public Collection<OHSign> getSigns(){
+        return serverListener.getSigns();
+    }
+
+    public OHSign getSign(String signName){
+        Collection<OHSign> signs = serverListener.getSigns();
+        for(OHSign sign : signs){
+            if(sign.getName().equalsIgnoreCase(signName)){
+                return sign;
+            }
+        }
+
+        return null;
+    }
+
     private void setupLog(){
         Logger root = Logger.getRootLogger();
         root.setLevel(Level.INFO);
@@ -103,32 +122,5 @@ public class WSMinecraft extends JavaPlugin {
      */
     public Observable<WSMessage> getMessagesRx(){
         return messagesRx;
-    }
-
-    /**
-     * Gather player data and package it in a a socket message.
-     * @return message with player data
-     */
-    public WSMessage createPlayersMessage(Collection<? extends Player> players){
-        List<PlayerData> playerDatas = players.stream().map(PlayerData::new).collect(Collectors.toList());
-        return new WSMessage(WSMessage.MESSAGE_TYPE_PLAYERS, gson.toJsonTree(playerDatas));
-    }
-
-    /**
-     * Gather server data and package it in a socket message
-     * @return message with socket data
-     */
-    public WSMessage createServerMessage(Server server){
-        ServerData serverData = new ServerData(server);
-        return new WSMessage(WSMessage.MESSAGE_TYPE_SERVERS, gson.toJsonTree(serverData));
-    }
-
-    /**
-     * Package signs data into a socket message.
-     * @param signs signs to send.
-     * @return message containing sign data
-     */
-    public WSMessage createSignMessage(Collection<OHSign> signs){
-        return new WSMessage(WSMessage.MESSAGE_TYPE_SIGNS, gson.toJsonTree(signs));
     }
 }
