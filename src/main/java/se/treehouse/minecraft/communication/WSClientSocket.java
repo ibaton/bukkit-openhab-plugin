@@ -6,8 +6,8 @@ import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.block.data.Powerable;
 import org.bukkit.entity.Player;
-import org.bukkit.material.Lever;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketConnect;
@@ -193,9 +193,12 @@ public class WSClientSocket {
             Block block = sign.getBlock();
 
             if (block.getType() == Material.LEVER) {
-                Lever lever = (Lever) block.getState().getData();
-                lever.setPowered(active);
-                block.setData(lever.getData(), true);
+                WSMinecraft.instance().getServer().getScheduler().runTask(WSMinecraft.instance(), () -> {
+                    Powerable lever = (Powerable) block.getBlockData();
+                    lever.setPowered(active);
+                    block.setBlockData(lever);
+                    block.getState().update(true, true);
+                });
             }
         }
     }
